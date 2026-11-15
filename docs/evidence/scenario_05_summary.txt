@@ -1,0 +1,2 @@
+PASS | Scenario 5: Connection switching / fluctuating speeds | 2026-11-15T23:05:33.582958 | 23.7s
+Details: Upload verified despite fluctuating conditions

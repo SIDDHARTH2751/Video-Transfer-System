@@ -1,0 +1,2 @@
+PASS | Scenario 6: Truncated upload | 2026-11-15T23:05:40.376643 | 6.8s
+Details: Upload in non-verified state (UPLOADING); analyzer refused

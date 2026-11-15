@@ -1,0 +1,14 @@
+Scenario 8: Tampered whole file hash
+Status: PASS
+Time: 2026-11-15T23:05:51.563539
+Duration: 1.3s
+Details: Server correctly rejected tampered hash
+
+--- LOG ---
+{
+  "upload_id": "8924ffd412514913b6c47e1754093af7",
+  "state": "FAILED",
+  "fail_reason": "Whole-file SHA-256 mismatch: expected=0000000000000000000000000000000000000000000000000000000000000000, actual=354a742b3e4fa51796dc6c56360c67885f0852d674ca53ebe6e66cb449b0ab61",
+  "sha256_expected": "0000000000000000000000000000000000000000000000000000000000000000",
+  "sha256_actual": "354a742b3e4fa51796dc6c56360c67885f0852d674ca53ebe6e66cb449b0ab61"
+}

@@ -1,0 +1,2 @@
+PASS | Scenario 7: Corrupted chunk | 2026-11-15T23:05:50.307645 | 9.9s
+Details: Corrupted chunks rejected and resent successfully

@@ -1,0 +1,42 @@
+Scenario 6: Truncated upload
+Status: PASS
+Time: 2026-11-15T23:05:40.376643
+Duration: 6.8s
+Details: Upload in non-verified state (UPLOADING); analyzer refused
+
+--- LOG ---
+2026-11-15 23:05:34,795 [client] INFO  File: clean.mp4 (658823 bytes, 644 chunks of 1024)
+2026-11-15 23:05:34,795 [client] INFO  Computing whole-file SHA-256...
+2026-11-15 23:05:34,797 [client] INFO  SHA-256: 354a742b3e4fa51796dc6c56360c67885f0852d674ca53ebe6e66cb449b0ab61
+2026-11-15 23:05:34,853 [client] INFO  HTTP Request: POST http://127.0.0.1:8000/uploads "HTTP/1.1 200 OK"
+2026-11-15 23:05:34,854 [client] INFO  Created upload: 1f603041c7c144f19309bea6eba4ac26
+2026-11-15 23:05:34,858 [client] INFO  HTTP Request: GET http://127.0.0.1:8000/uploads/1f603041c7c144f19309bea6eba4ac26 "HTTP/1.1 200 OK"
+2026-11-15 23:05:34,859 [client] INFO  Chunks received: 0/644, sending 644 missing
+2026-11-15 23:05:34,872 [client] INFO  HTTP Request: PUT http://127.0.0.1:8000/uploads/1f603041c7c144f19309bea6eba4ac26/chunks/0 "HTTP/1.1 200 OK"
+2026-11-15 23:05:34,873 [client] INFO  Chunk 1/644 sent (attempt 1) | 72.8 KB/s | 1/644 done
+2026-11-15 23:05:34,879 [client] INFO  HTTP Request: PUT http://127.0.0.1:8000/uploads/1f603041c7c144f19309bea6eba4ac26/chunks/1 "HTTP/1.1 200 OK"
+2026-11-15 23:05:34,879 [client] INFO  Chunk 2/644 sent (attempt 1) | 98.5 KB/s | 2/644 done
+2026-11-15 23:05:34,883 [client] INFO  HTTP Request: PUT http://127.0.0.1:8000/uploads/1f603041c7c144f19309bea6eba4ac26/chunks/2 "HTTP/1.1 200 OK"
+2026-11-15 23:05:34,884 [client] INFO  Chunk 3/644 sent (attempt 1) | 120.0 KB/s | 3/644 done
+2026-11-15 23:05:34,892 [client] INFO  HTTP Request: PUT http://127.0.0.1:8000/uploads/1f603041c7c144f19309bea6eba4ac26/chunks/3 "HTTP/1.1 200 OK"
+2026-11-15 23:05:34,892 [client] INFO  Chunk 4/644 sent (attempt 1) | 120.5 KB/s | 4/644 done
+2026-11-15 23:05:34,897 [client] INFO  HTTP Request: PUT http://127.0.0.1:8000/uploads/1f603041c7c144f19309bea6eba4ac26/chunks/4 "HTTP/1.1 200 OK"
+2026-11-15 23:05:34,898 [client] INFO  Chunk 5/644 sent (attempt 1) | 128.9 KB/s | 5/644 done
+2026-11-15 23:05:34,902 [client] INFO  HTTP Request: PUT http://127.0.0.1:8000/uploads/1f603041c7c144f19309bea6eba4ac26/chunks/5 "HTTP/1.1 200 OK"
+2026-11-15 23:05:34,903 [client] INFO  Chunk 6/644 sent (attempt 1) | 137.0 KB/s | 6/644 done
+2026-11-15 23:05:34,908 [client] INFO  HTTP Request: PUT http://127.0.0.1:8000/uploads/1f603041c7c144f19309bea6eba4ac26/chunks/6 "HTTP/1.1 200 OK"
+2026-11-15 23:05:34,909 [client] INFO  Chunk 7/644 sent (attempt 1) | 140.7 KB/s | 7/644 done
+2026-11-15 23:05:34,913 [client] INFO  HTTP Request: PUT http://127.0.0.1:8000/uploads/1f603041c7c144f19309bea6eba4ac26/chunks/7 "HTTP/1.1 200 OK"
+2026-11-15 23:05:34,913 [client] INFO  Chunk 8/644 sent (attempt 1) | 146.4 KB/s | 8/644 done
+2026-11-15 23:05:34,917 [client] INFO  HTTP Request: PUT http://127.0.0.1:8000/uploads/1f603041c7c144f19309bea6eba4ac26/chunks/8 "HTTP/1.1 200 OK"
+2026-11-15 23:05:34,918 [client] INFO  Chunk 9/644 sent (attempt 1) | 153.1 KB/s | 9/644 done
+2026-11-15 23:05:34,922 [client] INFO  HTTP Request: PUT http://127.0.0.1:8000/uploads/1f603041c7c144f19309bea6eba4ac26/chunks/9 "HTTP/1.1 200 OK"
+2026-11-15 23:05:34,922 [client] INFO  Chunk 10/644 sent (attempt 1) | 158.4 KB/s | 10/644 done
+2026-11-15 23:05:34,927 [client] INFO  HTTP Request: PUT http://127.0.0.1:8000/uploads/1f603041c7c144f19309bea6eba4ac26/chunks/10 "HTTP/1.1 200 OK"
+2026-11-15 23:05:34,927 [client] INFO  Chunk 11/644 sent (attempt 1) | 160.8 KB/s | 11/644 done
+2026-11-15 23:05:34,931 [client] INFO  HTTP Request: PUT http://127.0.0.1:8000/uploads/1f603041c7c144f19309bea6eba4ac26/chunks/11 "HTTP/1.1 200 OK"
+2026-11-15 23:05:34,931 [client] INFO  Chunk 12/644 sent (attempt 1) | 165.4 KB/s | 12/644 done
+2026-11-15 23:05:34,937 [client] INFO  HTTP Request: PUT http://127.0.0.1:8000/uploads/1f603041c7c144f19309bea6eba4ac26/chunks/12 "HTTP/1.1 200 OK"
+2026-11-15 23:05:34,937 [client] INFO  Chunk 13/644 sent (attempt 1) | 166.2 KB/s | 13/644 done
+2026-11-15 23:05:34,942 [client] INFO  HTTP Request: PUT http://127.0.0.1:8000/uploads/1f603041c7c144f19309bea6eba4ac26/chunks/13 "HTTP/1.1 200 OK"
+

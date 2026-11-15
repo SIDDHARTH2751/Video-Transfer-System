@@ -1,0 +1,94 @@
+Scenario 10: Frame anomalies detection
+Status: PASS
+Time: 2026-11-15T23:06:04.299461
+Duration: 9.6s
+Details: Detected 4 anomalies: frame_count_mismatch, timestamp_gap
+
+--- LOG ---
+{
+  "status": "ANALYZED",
+  "upload_id": "24f6680b37464b5bb6f38d784fd3756c",
+  "sha256_expected": "ed614f346ca05ac8073e55f1c06bb51deec634ad8bf3209919e5f25444cc33d1",
+  "sha256_actual": "ed614f346ca05ac8073e55f1c06bb51deec634ad8bf3209919e5f25444cc33d1",
+  "total_retries": 0,
+  "elapsed_seconds": 5.86
+}
+2026-11-15 23:05:55,998 [client] INFO  File: dropped.mp4 (647965 bytes, 3 chunks of 262144)
+2026-11-15 23:05:55,998 [client] INFO  Computing whole-file SHA-256...
+2026-11-15 23:05:56,000 [client] INFO  SHA-256: ed614f346ca05ac8073e55f1c06bb51deec634ad8bf3209919e5f25444cc33d1
+2026-11-15 23:05:56,068 [client] INFO  Generating capture manifest...
+2026-11-15 23:05:57,702 [client] INFO  HTTP Request: POST http://127.0.0.1:8000/uploads "HTTP/1.1 200 OK"
+2026-11-15 23:05:57,702 [client] INFO  Created upload: 24f6680b37464b5bb6f38d784fd3756c
+2026-11-15 23:05:57,707 [client] INFO  HTTP Request: GET http://127.0.0.1:8000/uploads/24f6680b37464b5bb6f38d784fd3756c "HTTP/1.1 200 OK"
+2026-11-15 23:05:57,708 [client] INFO  Chunks received: 0/3, sending 3 missing
+2026-11-15 23:05:57,722 [client] INFO  HTTP Request: PUT http://127.0.0.1:8000/uploads/24f6680b37464b5bb6f38d784fd3756c/chunks/0 "HTTP/1.1 200 OK"
+2026-11-15 23:05:57,722 [client] INFO  Chunk 1/3 sent (attempt 1) | 18087.4 KB/s | 1/3 done
+2026-11-15 23:05:57,728 [client] INFO  HTTP Request: PUT http://127.0.0.1:8000/uploads/24f6680b37464b5bb6f38d784fd3756c/chunks/1 "HTTP/1.1 200 OK"
+2026-11-15 23:05:57,729 [client] INFO  Chunk 2/3 sent (attempt 1) | 24684.3 KB/s | 2/3 done
+2026-11-15 23:05:57,735 [client] INFO  HTTP Request: PUT http://127.0.0.1:8000/uploads/24f6680b37464b5bb6f38d784fd3756c/chunks/2 "HTTP/1.1 200 OK"
+2026-11-15 23:05:57,736 [client] INFO  Chunk 3/3 sent (attempt 1) | 22754.7 KB/s | 3/3 done
+2026-11-15 23:05:57,736 [client] INFO  All chunks sent. Requesting completion...
+2026-11-15 23:06:03,565 [client] INFO  HTTP Request: POST http://127.0.0.1:8000/uploads/24f6680b37464b5bb6f38d784fd3756c/complete "HTTP/1.1 200 OK"
+2026-11-15 23:06:03,565 [client] INFO  Server response: state=ANALYZED
+2026-11-15 23:06:03,565 [client] INFO  ✅ Upload VERIFIED — 647965 bytes in 5.9s (108.0 KB/s), 0 retries
+
+
+Report anomalies: [
+  {
+    "type": "timestamp_gap",
+    "start_time": 4.966667,
+    "end_time": 5.166667,
+    "frame_indices": [
+      149,
+      150
+    ],
+    "evidence": [
+      "PTS delta 0.200000s exceeds threshold 0.050000s",
+      "Estimated 5 missing frame(s) at nominal 30.0 FPS"
+    ],
+    "confidence": "high",
+    "classification": "capture_or_encoding"
+  },
+  {
+    "type": "timestamp_gap",
+    "start_time": 9.966667,
+    "end_time": 10.333333,
+    "frame_indices": [
+      294,
+      295
+    ],
+    "evidence": [
+      "PTS delta 0.366666s exceeds threshold 0.050000s",
+      "Estimated 10 missing frame(s) at nominal 30.0 FPS"
+    ],
+    "confidence": "high",
+    "classification": "capture_or_encoding"
+  },
+  {
+    "type": "timestamp_gap",
+    "start_time": 19.966667,
+    "end_time": 20.166667,
+    "frame_indices": [
+      584,
+      585
+    ],
+    "evidence": [
+      "PTS delta 0.200000s exceeds threshold 0.050000s",
+      "Estimated 5 missing frame(s) at nominal 30.0 FPS"
+    ],
+    "confidence": "high",
+    "classification": "capture_or_encoding"
+  },
+  {
+    "type": "frame_count_mismatch",
+    "start_time": null,
+    "end_time": null,
+    "frame_indices": [],
+    "evidence": [
+      "Container duration 30.000s \u00d7 30.0 FPS \u2192 expected ~900 frames",
+      "Actual frame count: 880 (difference: 20)"
+    ],
+    "confidence": "medium",
+    "classification": "capture_or_encoding"
+  }
+]

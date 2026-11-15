@@ -1,0 +1,36 @@
+Scenario 7: Corrupted chunk
+Status: PASS
+Time: 2026-11-15T23:05:50.307645
+Duration: 9.9s
+Details: Corrupted chunks rejected and resent successfully
+
+--- LOG ---
+{
+  "status": "ANALYZED",
+  "upload_id": "e3dcfd9aa09e4000879239250327234a",
+  "sha256_expected": "354a742b3e4fa51796dc6c56360c67885f0852d674ca53ebe6e66cb449b0ab61",
+  "sha256_actual": "354a742b3e4fa51796dc6c56360c67885f0852d674ca53ebe6e66cb449b0ab61",
+  "total_retries": 0,
+  "elapsed_seconds": 5.74
+}
+2026-11-15 23:05:42,599 [client] INFO  File: clean.mp4 (658823 bytes, 3 chunks of 262144)
+2026-11-15 23:05:42,599 [client] INFO  Computing whole-file SHA-256...
+2026-11-15 23:05:42,601 [client] INFO  SHA-256: 354a742b3e4fa51796dc6c56360c67885f0852d674ca53ebe6e66cb449b0ab61
+2026-11-15 23:05:42,652 [client] INFO  HTTP Request: POST http://127.0.0.1:9000/uploads "HTTP/1.1 400 Bad Request"
+2026-11-15 23:05:42,652 [client] WARNING  Create failed (attempt 1): Client error '400 Bad Request' for url 'http://127.0.0.1:9000/uploads'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/400 — retrying in 0.5s
+2026-11-15 23:05:43,111 [client] INFO  HTTP Request: POST http://127.0.0.1:9000/uploads "HTTP/1.1 200 OK"
+2026-11-15 23:05:43,111 [client] INFO  Created upload: e3dcfd9aa09e4000879239250327234a
+2026-11-15 23:05:43,114 [client] INFO  HTTP Request: GET http://127.0.0.1:9000/uploads/e3dcfd9aa09e4000879239250327234a "HTTP/1.1 200 OK"
+2026-11-15 23:05:43,115 [client] INFO  Chunks received: 0/3, sending 3 missing
+2026-11-15 23:05:43,130 [client] INFO  HTTP Request: PUT http://127.0.0.1:9000/uploads/e3dcfd9aa09e4000879239250327234a/chunks/0 "HTTP/1.1 200 OK"
+2026-11-15 23:05:43,130 [client] INFO  Chunk 1/3 sent (attempt 1) | 16624.2 KB/s | 1/3 done
+2026-11-15 23:05:43,138 [client] INFO  HTTP Request: PUT http://127.0.0.1:9000/uploads/e3dcfd9aa09e4000879239250327234a/chunks/1 "HTTP/1.1 200 OK"
+2026-11-15 23:05:43,138 [client] INFO  Chunk 2/3 sent (attempt 1) | 22008.8 KB/s | 2/3 done
+2026-11-15 23:05:43,145 [client] INFO  HTTP Request: PUT http://127.0.0.1:9000/uploads/e3dcfd9aa09e4000879239250327234a/chunks/2 "HTTP/1.1 200 OK"
+2026-11-15 23:05:43,146 [client] INFO  Chunk 3/3 sent (attempt 1) | 20858.0 KB/s | 3/3 done
+2026-11-15 23:05:43,146 [client] INFO  All chunks sent. Requesting completion...
+2026-11-15 23:05:48,856 [client] INFO  HTTP Request: POST http://127.0.0.1:9000/uploads/e3dcfd9aa09e4000879239250327234a/complete "HTTP/1.1 200 OK"
+2026-11-15 23:05:48,856 [client] INFO  Server response: state=ANALYZED
+2026-11-15 23:05:48,856 [client] INFO  ✅ Upload VERIFIED — 658823 bytes in 5.7s (112.1 KB/s), 0 retries
+

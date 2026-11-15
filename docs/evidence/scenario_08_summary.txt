@@ -1,0 +1,2 @@
+PASS | Scenario 8: Tampered whole file hash | 2026-11-15T23:05:51.563539 | 1.3s
+Details: Server correctly rejected tampered hash

@@ -1,0 +1,2 @@
+PASS | Scenario 10: Frame anomalies detection | 2026-11-15T23:06:04.299461 | 9.6s
+Details: Detected 4 anomalies: frame_count_mismatch, timestamp_gap

@@ -1,0 +1,2 @@
+PASS | Scenario 4: Timeout / connection reset | 2026-11-15T23:05:09.837557 | 13.1s
+Details: Retries succeeded despite resets and hangs

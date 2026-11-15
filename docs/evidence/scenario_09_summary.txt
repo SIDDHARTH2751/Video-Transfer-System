@@ -1,0 +1,2 @@
+PASS | Scenario 9: Invalid / non-video file | 2026-11-15T23:05:54.734791 | 3.2s
+Details: Transfer verified but video marked invalid

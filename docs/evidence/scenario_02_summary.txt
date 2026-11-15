@@ -1,0 +1,2 @@
+PASS | Scenario 2: Variable signal 20-100% | 2026-11-15T23:04:35.597500 | 32.9s
+Details: Upload verified despite variable bandwidth

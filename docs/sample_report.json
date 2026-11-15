@@ -1,0 +1,112 @@
+{
+  "header": {
+    "upload_id": "24f6680b37464b5bb6f38d784fd3756c",
+    "filename": "dropped.mp4",
+    "created_at": "2026-11-15T17:35:56+00:00",
+    "report_generated": "2026-11-15T17:36:03.565000+00:00"
+  },
+  "transfer_status": {
+    "state": "ANALYZED",
+    "fail_reason": null,
+    "received_chunks": 3,
+    "total_chunks": 3,
+    "sha256_expected": "ed614f346ca05ac8073e55f1c06bb51deec634ad8bf3209919e5f25444cc33d1",
+    "sha256_actual": "ed614f346ca05ac8073e55f1c06bb51deec634ad8bf3209919e5f25444cc33d1",
+    "verdict": "Transfer completed and verified — SHA-256 hashes match."
+  },
+  "validation_status": {
+    "valid_video": true,
+    "container_format": "mov,mp4,m4a,3gp,3g2,mj2",
+    "codec": "h264",
+    "width": 640,
+    "height": 480,
+    "decode_errors": []
+  },
+  "frame_statistics": {
+    "total_frames": 880,
+    "declared_fps": 30.0,
+    "measured_fps": 29.333,
+    "r_frame_rate": "30/1",
+    "duration": 30.0,
+    "vfr_flag": false
+  },
+  "anomalies": [
+    {
+      "type": "timestamp_gap",
+      "start_time": 4.966667,
+      "end_time": 5.166667,
+      "frame_indices": [
+        149,
+        150
+      ],
+      "evidence": [
+        "PTS delta 0.200000s exceeds threshold 0.050000s",
+        "Estimated 5 missing frame(s) at nominal 30.0 FPS"
+      ],
+      "confidence": "high",
+      "classification": "capture_or_encoding"
+    },
+    {
+      "type": "timestamp_gap",
+      "start_time": 9.966667,
+      "end_time": 10.333333,
+      "frame_indices": [
+        294,
+        295
+      ],
+      "evidence": [
+        "PTS delta 0.366666s exceeds threshold 0.050000s",
+        "Estimated 10 missing frame(s) at nominal 30.0 FPS"
+      ],
+      "confidence": "high",
+      "classification": "capture_or_encoding"
+    },
+    {
+      "type": "timestamp_gap",
+      "start_time": 19.966667,
+      "end_time": 20.166667,
+      "frame_indices": [
+        584,
+        585
+      ],
+      "evidence": [
+        "PTS delta 0.200000s exceeds threshold 0.050000s",
+        "Estimated 5 missing frame(s) at nominal 30.0 FPS"
+      ],
+      "confidence": "high",
+      "classification": "capture_or_encoding"
+    },
+    {
+      "type": "frame_count_mismatch",
+      "start_time": null,
+      "end_time": null,
+      "frame_indices": [],
+      "evidence": [
+        "Container duration 30.000s × 30.0 FPS → expected ~900 frames",
+        "Actual frame count: 880 (difference: 20)"
+      ],
+      "confidence": "medium",
+      "classification": "capture_or_encoding"
+    }
+  ],
+  "classification_summary": "The file was transferred with verified SHA-256 integrity. Transfer-related corruption is ruled out. 4 anomaly(ies) classified as capture/encoding issues.",
+  "manifest_comparison": {
+    "expected_frame_count": 900,
+    "actual_frame_count": 880,
+    "frame_count_matches": false,
+    "expected_duration": 30.0,
+    "actual_duration": 30.0,
+    "duration_matches": true,
+    "declared_fps": 30.0,
+    "measured_fps": 29.333,
+    "fps_matches": true,
+    "source_sha256": "ed614f346ca05ac8073e55f1c06bb51deec634ad8bf3209919e5f25444cc33d1"
+  },
+  "limitations": [
+    "A byte-perfect transfer cannot prove that the original recording had no dropped frames.",
+    "Converting a video to 30 FPS may deliberately duplicate or omit frames during resampling.",
+    "Without a capture manifest, source-side frame drops cannot be distinguished from capture-time drops.",
+    "Frozen-content detection relies on a coarse perceptual hash; very similar (but distinct) frames may be flagged.",
+    "VFR detection compares declared vs measured FPS — small discrepancies may be codec rounding, not true VFR."
+  ]
+}

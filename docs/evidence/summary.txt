@@ -1,0 +1,24 @@
+Scenario Run Summary — 2026-11-15T23:06:04.303127
+==================================================
+[PASS] Scenario 1: Stable upload (9.7s)
+  Upload completed and verified successfully
+[PASS] Scenario 2: Variable signal 20-100% (32.9s)
+  Upload verified despite variable bandwidth
+[PASS] Scenario 3: Interruption + reconnect (21.1s)
+  Resumed after outage; only missing chunks resent
+[PASS] Scenario 4: Timeout / connection reset (13.1s)
+  Retries succeeded despite resets and hangs
+[PASS] Scenario 5: Connection switching / fluctuating speeds (23.7s)
+  Upload verified despite fluctuating conditions
+[PASS] Scenario 6: Truncated upload (6.8s)
+  Upload in non-verified state (UPLOADING); analyzer refused
+[PASS] Scenario 7: Corrupted chunk (9.9s)
+  Corrupted chunks rejected and resent successfully
+[PASS] Scenario 8: Tampered whole file hash (1.3s)
+  Server correctly rejected tampered hash
+[PASS] Scenario 9: Invalid / non-video file (3.2s)
+  Transfer verified but video marked invalid
+[PASS] Scenario 10: Frame anomalies detection (9.6s)
+  Detected 4 anomalies: frame_count_mismatch, timestamp_gap
+
+10/10 passed

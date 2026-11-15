@@ -1,0 +1,29 @@
+Scenario 9: Invalid / non-video file
+Status: PASS
+Time: 2026-11-15T23:05:54.734791
+Duration: 3.2s
+Details: Transfer verified but video marked invalid
+
+--- LOG ---
+{
+  "status": "ANALYZED",
+  "upload_id": "33a708fee5bf458db421f839931144d6",
+  "sha256_expected": "2013c3c02cebd2d2e99d16a11a33575b8e505327134e5ee69a847d76623bf8a7",
+  "sha256_actual": "2013c3c02cebd2d2e99d16a11a33575b8e505327134e5ee69a847d76623bf8a7",
+  "total_retries": 0,
+  "elapsed_seconds": 1.7
+}
+2026-11-15 23:05:52,247 [client] INFO  File: not_a_video.bin (50000 bytes, 1 chunks of 262144)
+2026-11-15 23:05:52,247 [client] INFO  Computing whole-file SHA-256...
+2026-11-15 23:05:52,248 [client] INFO  SHA-256: 2013c3c02cebd2d2e99d16a11a33575b8e505327134e5ee69a847d76623bf8a7
+2026-11-15 23:05:52,300 [client] INFO  HTTP Request: POST http://127.0.0.1:8000/uploads "HTTP/1.1 200 OK"
+2026-11-15 23:05:52,301 [client] INFO  Created upload: 33a708fee5bf458db421f839931144d6
+2026-11-15 23:05:52,303 [client] INFO  HTTP Request: GET http://127.0.0.1:8000/uploads/33a708fee5bf458db421f839931144d6 "HTTP/1.1 200 OK"
+2026-11-15 23:05:52,304 [client] INFO  Chunks received: 0/1, sending 1 missing
+2026-11-15 23:05:52,322 [client] INFO  HTTP Request: PUT http://127.0.0.1:8000/uploads/33a708fee5bf458db421f839931144d6/chunks/0 "HTTP/1.1 200 OK"
+2026-11-15 23:05:52,322 [client] INFO  Chunk 1/1 sent (attempt 1) | 2625.1 KB/s | 1/1 done
+2026-11-15 23:05:52,322 [client] INFO  All chunks sent. Requesting completion...
+2026-11-15 23:05:54,001 [client] INFO  HTTP Request: POST http://127.0.0.1:8000/uploads/33a708fee5bf458db421f839931144d6/complete "HTTP/1.1 200 OK"
+2026-11-15 23:05:54,001 [client] INFO  Server response: state=ANALYZED
+2026-11-15 23:05:54,002 [client] INFO  ✅ Upload VERIFIED — 50000 bytes in 1.7s (28.8 KB/s), 0 retries
+

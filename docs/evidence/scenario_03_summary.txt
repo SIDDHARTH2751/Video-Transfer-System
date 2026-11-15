@@ -1,0 +1,2 @@
+PASS | Scenario 3: Interruption + reconnect | 2026-11-15T23:04:56.692515 | 21.1s
+Details: Resumed after outage; only missing chunks resent

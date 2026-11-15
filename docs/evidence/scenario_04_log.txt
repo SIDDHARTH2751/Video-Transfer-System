@@ -1,0 +1,34 @@
+Scenario 4: Timeout / connection reset
+Status: PASS
+Time: 2026-11-15T23:05:09.837557
+Duration: 13.1s
+Details: Retries succeeded despite resets and hangs
+
+--- LOG ---
+{
+  "status": "ANALYZED",
+  "upload_id": "8e0241299f6c405d8813a26e7ada3de4",
+  "sha256_expected": "354a742b3e4fa51796dc6c56360c67885f0852d674ca53ebe6e66cb449b0ab61",
+  "sha256_actual": "354a742b3e4fa51796dc6c56360c67885f0852d674ca53ebe6e66cb449b0ab61",
+  "total_retries": 0,
+  "elapsed_seconds": 6.01
+}
+2026-11-15 23:04:58,944 [client] INFO  File: clean.mp4 (658823 bytes, 3 chunks of 262144)
+2026-11-15 23:04:58,945 [client] INFO  Computing whole-file SHA-256...
+2026-11-15 23:04:58,946 [client] INFO  SHA-256: 354a742b3e4fa51796dc6c56360c67885f0852d674ca53ebe6e66cb449b0ab61
+2026-11-15 23:05:02,018 [client] WARNING  Create failed (attempt 1): Server disconnected without sending a response. — retrying in 0.3s
+2026-11-15 23:05:02,348 [client] INFO  HTTP Request: POST http://127.0.0.1:9000/uploads "HTTP/1.1 200 OK"
+2026-11-15 23:05:02,349 [client] INFO  Created upload: 8e0241299f6c405d8813a26e7ada3de4
+2026-11-15 23:05:02,355 [client] INFO  HTTP Request: GET http://127.0.0.1:9000/uploads/8e0241299f6c405d8813a26e7ada3de4 "HTTP/1.1 200 OK"
+2026-11-15 23:05:02,356 [client] INFO  Chunks received: 0/3, sending 3 missing
+2026-11-15 23:05:02,382 [client] INFO  HTTP Request: PUT http://127.0.0.1:9000/uploads/8e0241299f6c405d8813a26e7ada3de4/chunks/0 "HTTP/1.1 200 OK"
+2026-11-15 23:05:02,382 [client] INFO  Chunk 1/3 sent (attempt 1) | 9761.1 KB/s | 1/3 done
+2026-11-15 23:05:02,394 [client] INFO  HTTP Request: PUT http://127.0.0.1:9000/uploads/8e0241299f6c405d8813a26e7ada3de4/chunks/1 "HTTP/1.1 200 OK"
+2026-11-15 23:05:02,395 [client] INFO  Chunk 2/3 sent (attempt 1) | 13182.8 KB/s | 2/3 done
+2026-11-15 23:05:02,402 [client] INFO  HTTP Request: PUT http://127.0.0.1:9000/uploads/8e0241299f6c405d8813a26e7ada3de4/chunks/2 "HTTP/1.1 200 OK"
+2026-11-15 23:05:02,402 [client] INFO  Chunk 3/3 sent (attempt 1) | 13849.1 KB/s | 3/3 done
+2026-11-15 23:05:02,402 [client] INFO  All chunks sent. Requesting completion...
+2026-11-15 23:05:08,369 [client] INFO  HTTP Request: POST http://127.0.0.1:9000/uploads/8e0241299f6c405d8813a26e7ada3de4/complete "HTTP/1.1 200 OK"
+2026-11-15 23:05:08,369 [client] INFO  Server response: state=ANALYZED
+2026-11-15 23:05:08,369 [client] INFO  ✅ Upload VERIFIED — 658823 bytes in 6.0s (107.0 KB/s), 0 retries
+
