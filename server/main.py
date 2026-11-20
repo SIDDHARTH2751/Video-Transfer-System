@@ -4,10 +4,13 @@ from __future__ import annotations
 import logging
 import shutil
 import time
+from pathlib import Path
 from typing import Optional
 
 from fastapi import FastAPI, HTTPException, Query, Request, Response
-from fastapi.responses import JSONResponse, PlainTextResponse
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, PlainTextResponse
+from fastapi.staticfiles import StaticFiles
 
 from . import storage
 from .analyzer import AnalyzerGateError, analyze
@@ -43,6 +46,18 @@ _check_ffmpeg()
 # ── App ───────────────────────────────────────────────────────────────────────
 
 app = FastAPI(title="Confluentia 2026 — Video Upload & Integrity Service")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+STATIC_DIR = PROJECT_ROOT / "static"
+SAMPLE_DIR = PROJECT_ROOT / "tools" / "sample_videos"
 
 STALL_TIMEOUT = storage.STALL_TIMEOUT
 
@@ -311,6 +326,55 @@ def get_report(upload_id: str, format: Optional[str] = Query(None)) -> Response:
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+
+# ── Frontend & Media Streaming Endpoints ─────────────────────────────────────
+
+@app.get("/", response_class=HTMLResponse)
+def index():
+    index_file = STATIC_DIR / "index.html"
+    if not index_file.exists():
+        return HTMLResponse("<h1>Frontend loading... Please create static/index.html</h1>", status_code=200)
+    return HTMLResponse(index_file.read_text(encoding="utf-8"))
+
+
+@app.get("/uploads/{upload_id}/video")
+def get_assembled_video(upload_id: str):
+    p = storage.get_assembled_path(upload_id)
+    if not p or not p.exists():
+        raise HTTPException(404, detail=f"Assembled video not found for upload {upload_id}")
+    meta = storage.load_metadata(upload_id)
+    filename = meta.filename if meta else f"{upload_id}.mp4"
+    return FileResponse(p, media_type="video/mp4", filename=filename)
+
+
+@app.get("/api/sample-videos")
+def list_sample_videos():
+    if not SAMPLE_DIR.exists():
+        return []
+    items = []
+    for f in sorted(SAMPLE_DIR.iterdir()):
+        if f.is_file() and f.suffix.lower() in (".mp4", ".bin", ".mkv"):
+            items.append({
+                "filename": f.name,
+                "size": f.stat().st_size,
+                "url": f"/api/sample-videos/{f.name}",
+            })
+    return items
+
+
+@app.get("/api/sample-videos/{filename}")
+def get_sample_video(filename: str):
+    p = SAMPLE_DIR / filename
+    if not p.exists() or not p.is_file():
+        raise HTTPException(404, detail=f"Sample video '{filename}' not found")
+    media_type = "video/mp4" if filename.endswith(".mp4") else "application/octet-stream"
+    return FileResponse(p, media_type=media_type, filename=filename)
+
+
+# Mount static folder if present
+if STATIC_DIR.exists():
+    app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
 
 
 # ── Entrypoint ────────────────────────────────────────────────────────────────

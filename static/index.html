@@ -1,0 +1,1639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Confluentia 2026 — Resilient Video Upload & Forensic Frame Analyzer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0b0f17;
+      --card-bg: rgba(18, 24, 38, 0.85);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --card-border-glow: rgba(56, 189, 248, 0.2);
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent-glow: rgba(56, 189, 248, 0.35);
+      --emerald: #10b981;
+      --emerald-glow: rgba(16, 185, 129, 0.35);
+      --amber: #f59e0b;
+      --amber-glow: rgba(245, 158, 11, 0.35);
+      --rose: #f43f5e;
+      --rose-glow: rgba(244, 63, 94, 0.35);
+      --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background-color: var(--bg);
+      background-image: 
+        radial-gradient(circle at 15% 15%, rgba(56, 189, 248, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 85% 85%, rgba(16, 185, 129, 0.06) 0%, transparent 40%);
+      color: var(--text);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+      line-height: 1.5;
+      padding: 1.5rem 1rem 3rem;
+    }
+
+    .container {
+      max-width: 1300px;
+      margin: 0 auto;
+    }
+
+    /* Header */
+    header {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      padding-bottom: 1.5rem;
+      border-bottom: 1px solid var(--card-border);
+      margin-bottom: 2rem;
+    }
+
+    .brand h1 {
+      font-size: 1.6rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #fff 30%, var(--accent) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: -0.02em;
+    }
+
+    .brand p {
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      margin-top: 0.2rem;
+    }
+
+    .header-badges {
+      display: flex;
+      gap: 0.6rem;
+      align-items: center;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.35rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--card-border);
+    }
+
+    .badge-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--text-muted);
+    }
+
+    .badge-online .badge-dot { background: var(--emerald); box-shadow: 0 0 8px var(--emerald-glow); }
+    .badge-offline .badge-dot { background: var(--rose); box-shadow: 0 0 8px var(--rose-glow); }
+    .badge-fsm { background: rgba(56, 189, 248, 0.1); border-color: rgba(56, 189, 248, 0.3); color: var(--accent); }
+
+    /* Layout Grid */
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+
+    @media (min-width: 1024px) {
+      .grid-2 { grid-template-columns: 1.1fr 0.9fr; }
+    }
+
+    /* Card */
+    .card {
+      background: var(--card-bg);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--card-border);
+      border-radius: 1rem;
+      padding: 1.5rem;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.2rem;
+    }
+
+    .card-title-icon {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    /* Step 1: Upload Controls */
+    .dropzone {
+      border: 2px dashed rgba(255, 255, 255, 0.15);
+      border-radius: 0.85rem;
+      padding: 2rem 1.5rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .dropzone:hover, .dropzone.dragover {
+      border-color: var(--accent);
+      background: rgba(56, 189, 248, 0.05);
+      box-shadow: 0 0 20px rgba(56, 189, 248, 0.1);
+    }
+
+    .dropzone p {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin-top: 0.5rem;
+    }
+
+    .file-input { display: none; }
+
+    .sample-picker {
+      margin-top: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .sample-picker select, .form-select {
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid var(--card-border);
+      color: var(--text);
+      padding: 0.55rem 0.85rem;
+      border-radius: 0.5rem;
+      font-family: inherit;
+      font-size: 0.85rem;
+      outline: none;
+      flex: 1;
+    }
+
+    .sample-picker select:focus, .form-select:focus {
+      border-color: var(--accent);
+    }
+
+    .config-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1rem;
+      margin-top: 1.2rem;
+    }
+
+    .config-group label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 0.35rem;
+    }
+
+    .file-preview-card {
+      margin-top: 1.2rem;
+      padding: 1rem;
+      background: rgba(255, 255, 255, 0.03);
+      border-radius: 0.75rem;
+      border: 1px solid var(--card-border);
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+    }
+
+    .file-preview-card video {
+      width: 140px;
+      height: 80px;
+      object-fit: cover;
+      border-radius: 0.4rem;
+      background: #000;
+    }
+
+    .file-preview-info {
+      flex: 1;
+      font-size: 0.85rem;
+    }
+
+    .file-preview-info .filename {
+      font-weight: 700;
+      word-break: break-all;
+      color: #fff;
+    }
+
+    .file-preview-info .filesize {
+      color: var(--text-muted);
+      font-size: 0.78rem;
+      margin-top: 0.2rem;
+    }
+
+    /* Network Simulation Panel */
+    .network-presets {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.75rem;
+      margin-bottom: 1.2rem;
+    }
+
+    .preset-btn {
+      padding: 0.75rem 0.5rem;
+      border-radius: 0.65rem;
+      border: 1px solid var(--card-border);
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--text);
+      cursor: pointer;
+      font-family: inherit;
+      font-size: 0.82rem;
+      font-weight: 600;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.3rem;
+      transition: all 0.2s ease;
+    }
+
+    .preset-btn:hover {
+      background: rgba(255, 255, 255, 0.07);
+    }
+
+    .preset-btn.active-preset {
+      border-color: var(--accent);
+      background: rgba(56, 189, 248, 0.12);
+      box-shadow: 0 0 15px rgba(56, 189, 248, 0.15);
+    }
+
+    .preset-btn.active-low {
+      border-color: var(--amber);
+      background: rgba(245, 158, 11, 0.12);
+      box-shadow: 0 0 15px var(--amber-glow);
+    }
+
+    .preset-btn.active-off {
+      border-color: var(--rose);
+      background: rgba(244, 63, 94, 0.12);
+      box-shadow: 0 0 15px var(--rose-glow);
+    }
+
+    .live-actions-bar {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 0.6rem;
+      margin-bottom: 1.2rem;
+    }
+
+    .btn-action {
+      padding: 0.65rem 0.75rem;
+      border-radius: 0.5rem;
+      font-size: 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+      transition: all 0.2s ease;
+      font-family: inherit;
+      border: 1px solid transparent;
+    }
+
+    .btn-cut {
+      background: rgba(244, 63, 94, 0.15);
+      border-color: rgba(244, 63, 94, 0.4);
+      color: #fda4af;
+    }
+    .btn-cut:hover { background: rgba(244, 63, 94, 0.3); }
+
+    .btn-restore {
+      background: rgba(16, 185, 129, 0.15);
+      border-color: rgba(16, 185, 129, 0.4);
+      color: #6ee7b7;
+    }
+    .btn-restore:hover { background: rgba(16, 185, 129, 0.3); }
+
+    .btn-corrupt {
+      background: rgba(245, 158, 11, 0.15);
+      border-color: rgba(245, 158, 11, 0.4);
+      color: #fde68a;
+    }
+    .btn-corrupt:hover { background: rgba(245, 158, 11, 0.3); }
+
+    .slider-row {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      margin-top: 1rem;
+    }
+
+    .slider-item {
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+      font-size: 0.8rem;
+    }
+
+    .slider-header {
+      display: flex;
+      justify-content: space-between;
+      color: var(--text-muted);
+    }
+
+    .slider-header span:last-child {
+      font-family: var(--font-mono);
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 6px;
+      border-radius: 3px;
+      background: rgba(255, 255, 255, 0.1);
+      outline: none;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--accent);
+      cursor: pointer;
+      box-shadow: 0 0 8px var(--accent-glow);
+    }
+
+    /* Start / Main Buttons */
+    .btn-primary {
+      width: 100%;
+      padding: 0.85rem;
+      background: linear-gradient(135deg, #0284c7, var(--accent));
+      color: #fff;
+      font-weight: 700;
+      font-size: 0.95rem;
+      border: none;
+      border-radius: 0.65rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 15px rgba(56, 189, 248, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-top: 1.2rem;
+      font-family: inherit;
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      filter: brightness(1.1);
+      transform: translateY(-1px);
+    }
+
+    .btn-primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      filter: grayscale(0.5);
+    }
+
+    /* Telemetry & Progress */
+    .telemetry-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 0.75rem;
+      margin-bottom: 1.2rem;
+    }
+
+    .telemetry-card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--card-border);
+      border-radius: 0.65rem;
+      padding: 0.75rem;
+      text-align: center;
+    }
+
+    .telemetry-label {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 0.2rem;
+    }
+
+    .telemetry-value {
+      font-size: 1.15rem;
+      font-weight: 700;
+      font-family: var(--font-mono);
+    }
+
+    .progress-bar-container {
+      background: rgba(255, 255, 255, 0.08);
+      height: 10px;
+      border-radius: 5px;
+      overflow: hidden;
+      margin-bottom: 1.2rem;
+      position: relative;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #0284c7, var(--accent), var(--emerald));
+      transition: width 0.2s ease;
+      border-radius: 5px;
+    }
+
+    /* Chunk Matrix */
+    .chunk-matrix {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(36px, 1fr));
+      gap: 6px;
+      margin-top: 0.8rem;
+      max-height: 220px;
+      overflow-y: auto;
+      padding: 4px;
+    }
+
+    .chunk-cell {
+      height: 36px;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      transition: all 0.2s ease;
+      position: relative;
+      cursor: default;
+    }
+
+    .chunk-cell.in-flight {
+      background: rgba(56, 189, 248, 0.25);
+      border-color: var(--accent);
+      color: #fff;
+      animation: pulse 1s infinite alternate;
+    }
+
+    .chunk-cell.verified {
+      background: rgba(16, 185, 129, 0.25);
+      border-color: var(--emerald);
+      color: #a7f3d0;
+    }
+
+    .chunk-cell.failed {
+      background: rgba(244, 63, 94, 0.25);
+      border-color: var(--rose);
+      color: #fca5a5;
+    }
+
+    .chunk-cell.retrying {
+      background: rgba(245, 158, 11, 0.25);
+      border-color: var(--amber);
+      color: #fde68a;
+    }
+
+    @keyframes pulse {
+      from { transform: scale(0.98); box-shadow: 0 0 4px var(--accent-glow); }
+      to { transform: scale(1.04); box-shadow: 0 0 12px var(--accent-glow); }
+    }
+
+    /* Terminal Console */
+    .terminal {
+      background: #05080e;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 0.65rem;
+      padding: 0.85rem;
+      font-family: var(--font-mono);
+      font-size: 0.76rem;
+      height: 180px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      color: #94a3b8;
+    }
+
+    .term-line { word-break: break-all; }
+    .term-time { color: #64748b; margin-right: 6px; }
+    .term-tag { font-weight: 700; margin-right: 6px; }
+    .term-tag.client { color: var(--accent); }
+    .term-tag.server { color: var(--emerald); }
+    .term-tag.sim { color: var(--amber); }
+    .term-tag.err { color: var(--rose); }
+
+    /* Step 4: Forensic Report Section */
+    .report-section {
+      margin-top: 2rem;
+      display: none;
+    }
+
+    .verdict-banner {
+      padding: 1.2rem;
+      border-radius: 0.75rem;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border: 1px solid transparent;
+    }
+
+    .verdict-banner.clean {
+      background: rgba(16, 185, 129, 0.12);
+      border-color: rgba(16, 185, 129, 0.4);
+      color: #6ee7b7;
+    }
+
+    .verdict-banner.anomalies {
+      background: rgba(245, 158, 11, 0.12);
+      border-color: rgba(245, 158, 11, 0.4);
+      color: #fde68a;
+    }
+
+    .verdict-banner.failed {
+      background: rgba(244, 63, 94, 0.12);
+      border-color: rgba(244, 63, 94, 0.4);
+      color: #fca5a5;
+    }
+
+    .verdict-title {
+      font-size: 1.2rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .report-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+
+    @media (min-width: 900px) {
+      .report-grid { grid-template-columns: 1fr 1fr; }
+    }
+
+    .report-video-container video {
+      width: 100%;
+      max-height: 380px;
+      border-radius: 0.75rem;
+      background: #000;
+      border: 1px solid var(--card-border);
+    }
+
+    .stats-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+      margin-bottom: 1rem;
+    }
+
+    .stats-table td {
+      padding: 0.5rem 0.6rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .stats-table td:first-child {
+      color: var(--text-muted);
+      font-weight: 600;
+      width: 45%;
+    }
+
+    .stats-table td:last-child {
+      font-family: var(--font-mono);
+      font-weight: 600;
+    }
+
+    .anomaly-list {
+      max-height: 180px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      margin-top: 0.5rem;
+    }
+
+    .anomaly-item {
+      padding: 0.5rem 0.75rem;
+      background: rgba(255, 255, 255, 0.03);
+      border-left: 3px solid var(--amber);
+      border-radius: 0.35rem;
+      font-size: 0.78rem;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      transition: background 0.2s;
+    }
+
+    .anomaly-item:hover {
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .attribution-card {
+      padding: 1rem;
+      border-radius: 0.65rem;
+      background: rgba(56, 189, 248, 0.06);
+      border: 1px solid rgba(56, 189, 248, 0.2);
+      font-size: 0.82rem;
+      line-height: 1.6;
+      margin-top: 1rem;
+    }
+
+    .attribution-card strong {
+      color: var(--accent);
+    }
+
+    .tabs {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .tab-btn {
+      padding: 0.4rem 0.8rem;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--card-border);
+      border-radius: 0.4rem;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 600;
+      font-family: inherit;
+    }
+
+    .tab-btn.active {
+      background: var(--accent);
+      color: #000;
+      border-color: var(--accent);
+    }
+
+    pre.code-view {
+      background: #05080e;
+      border: 1px solid var(--card-border);
+      border-radius: 0.65rem;
+      padding: 1rem;
+      font-family: var(--font-mono);
+      font-size: 0.76rem;
+      color: #cbd5e1;
+      max-height: 350px;
+      overflow: auto;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <!-- Header -->
+  <header>
+    <div class="brand">
+      <h1>Confluentia 2026 Ingestion & Integrity Portal</h1>
+      <p>Fault-Tolerant Chunked Video Upload & 30 FPS Frame-Level Integrity Forensics</p>
+    </div>
+    <div class="header-badges">
+      <div class="badge badge-online" id="serverStatusBadge">
+        <div class="badge-dot"></div>
+        <span id="serverStatusText">Backend Online (:8000)</span>
+      </div>
+      <div class="badge badge-fsm">
+        <span>FSM:</span> <strong id="fsmBadge">IDLE</strong>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Grid -->
+  <div class="grid grid-2">
+    
+    <!-- LEFT: Upload & File Configuration -->
+    <div class="card">
+      <div class="card-title">
+        <span class="card-title-icon">
+          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+          Step 1: Video File & Chunking
+        </span>
+      </div>
+
+      <!-- Dropzone -->
+      <div class="dropzone" id="dropzone">
+        <svg width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" style="margin: 0 auto; color: var(--accent);"><path d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+        <p style="font-weight: 600; color: #fff; margin-top: 0.5rem;">Drag & drop video here or click to browse</p>
+        <p>Supports MP4, MOV, MKV, WebM (H.264 @ 30 FPS)</p>
+        <input type="file" id="fileInput" class="file-input" accept="video/*,.bin">
+      </div>
+
+      <!-- Quick sample video selector -->
+      <div class="sample-picker">
+        <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); white-space: nowrap;">Or Test Sample Clip:</span>
+        <select id="sampleSelect" class="form-select">
+          <option value="">-- Choose Pre-Generated Test Clip --</option>
+        </select>
+        <button id="btnLoadSample" class="btn-action" style="background: rgba(255,255,255,0.08); border-color: var(--card-border); white-space: nowrap;">Load</button>
+      </div>
+
+      <!-- Selected File Preview -->
+      <div class="file-preview-card" id="filePreviewCard" style="display: none;">
+        <video id="localVideoPreview" controls muted></video>
+        <div class="file-preview-info">
+          <div class="filename" id="previewFilename">video.mp4</div>
+          <div class="filesize" id="previewFilesize">0 MB (0 bytes)</div>
+          <div class="filesize" id="previewMeta" style="color: var(--accent);">Ready for chunking</div>
+        </div>
+      </div>
+
+      <!-- Chunking Settings -->
+      <div class="config-row">
+        <div class="config-group">
+          <label for="chunkSizeSelect">Chunk Size (Slice Window)</label>
+          <select id="chunkSizeSelect" class="form-select">
+            <option value="65536">64 KiB (High Chunk Count)</option>
+            <option value="131072">128 KiB</option>
+            <option value="262144" selected>256 KiB (Standard / Recommended)</option>
+            <option value="524288">512 KiB</option>
+            <option value="1048576">1 MiB</option>
+            <option value="2097152">2 MiB</option>
+          </select>
+        </div>
+        <div class="config-group">
+          <label>Capture Manifest</label>
+          <div style="display: flex; align-items: center; gap: 0.5rem; height: 38px;">
+            <input type="checkbox" id="manifestToggle" checked style="width: 18px; height: 18px; accent-color: var(--accent);">
+            <label for="manifestToggle" style="margin: 0; font-size: 0.85rem; color: #fff; cursor: pointer;">Enable Capture Manifest</label>
+          </div>
+        </div>
+      </div>
+
+      <button id="btnStartUpload" class="btn-primary" disabled>
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+        Start Resilient Ingestion
+      </button>
+    </div>
+
+    <!-- RIGHT: Network Impairment Controls -->
+    <div class="card">
+      <div class="card-title">
+        <span class="card-title-icon">
+          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071c3.904-3.905 10.236-3.905 14.141 0M1.394 9.393c5.857-5.857 15.355-5.857 21.213 0"></path></svg>
+          Step 2: Network Impairment Simulator
+        </span>
+        <span class="badge" id="netConditionBadge" style="background: rgba(16, 185, 129, 0.15); border-color: rgba(16, 185, 129, 0.4); color: #6ee7b7;">Normal 100%</span>
+      </div>
+
+      <!-- Presets -->
+      <div class="network-presets">
+        <button class="preset-btn active-preset" id="presetNormal">
+          <span style="font-size: 1.2rem;">🟢</span>
+          <span>Normal (100%)</span>
+          <span style="font-size: 0.7rem; color: var(--text-muted);">Uncapped</span>
+        </button>
+        <button class="preset-btn" id="presetLow">
+          <span style="font-size: 1.2rem;">🟡</span>
+          <span>Low Net (20%)</span>
+          <span style="font-size: 0.7rem; color: var(--text-muted);">40 KB/s + Delay</span>
+        </button>
+        <button class="preset-btn" id="presetOff">
+          <span style="font-size: 1.2rem;">🔴</span>
+          <span>Off-Network</span>
+          <span style="font-size: 0.7rem; color: var(--text-muted);">0 KB/s Blackout</span>
+        </button>
+      </div>
+
+      <!-- Live Interactive Actions (usable DURING upload) -->
+      <p style="font-size: 0.78rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.5rem; letter-spacing: 0.05em;">Interactive Live Injections (Click mid-upload)</p>
+      <div class="live-actions-bar">
+        <button class="btn-action btn-cut" id="btnCutNetwork">
+          🔌 Cut Cable
+        </button>
+        <button class="btn-action btn-restore" id="btnRestoreNetwork">
+          ⚡ Restore Link
+        </button>
+        <button class="btn-action btn-corrupt" id="btnCorruptChunk">
+          ⚠️ Corrupt Next
+        </button>
+        <button class="btn-action" id="btnPauseResume" style="background: rgba(255,255,255,0.06); border-color: var(--card-border); color: #fff;">
+          ⏸️ Pause
+        </button>
+      </div>
+
+      <!-- Fine-Grained Sliders -->
+      <div class="slider-row">
+        <div class="slider-item">
+          <div class="slider-header">
+            <span>Bandwidth Throttle (Speed Cap)</span>
+            <span id="speedVal">Uncapped</span>
+          </div>
+          <input type="range" id="speedSlider" min="10" max="2000" step="10" value="2000">
+        </div>
+        <div class="slider-item">
+          <div class="slider-header">
+            <span>Added Latency + Jitter</span>
+            <span id="latencyVal">0 ms</span>
+          </div>
+          <input type="range" id="latencySlider" min="0" max="1500" step="50" value="0">
+        </div>
+        <div class="slider-item">
+          <div class="slider-header">
+            <span>Simulated Socket Drop Probability</span>
+            <span id="dropVal">0 %</span>
+          </div>
+          <input type="range" id="dropSlider" min="0" max="50" step="5" value="0">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 3: Live Telemetry, Chunk Matrix, and Event Console -->
+  <div class="card" style="margin-top: 1.5rem;">
+    <div class="card-title">
+      <span class="card-title-icon">
+        <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+        Step 3: Transfer Telemetry & Atomic Chunk Visualizer
+      </span>
+      <span style="font-size: 0.85rem; font-family: var(--font-mono); color: var(--accent);" id="uploadIdDisplay"></span>
+    </div>
+
+    <!-- Telemetry Cards -->
+    <div class="telemetry-row">
+      <div class="telemetry-card">
+        <div class="telemetry-label">Transfer Speed</div>
+        <div class="telemetry-value" id="teleSpeed" style="color: var(--accent);">0 KB/s</div>
+      </div>
+      <div class="telemetry-card">
+        <div class="telemetry-label">Chunks Stored</div>
+        <div class="telemetry-value" id="teleChunks">0 / 0</div>
+      </div>
+      <div class="telemetry-card">
+        <div class="telemetry-label">Retries / Backoffs</div>
+        <div class="telemetry-value" id="teleRetries" style="color: var(--amber);">0</div>
+      </div>
+      <div class="telemetry-card">
+        <div class="telemetry-label">Elapsed Time</div>
+        <div class="telemetry-value" id="teleElapsed">00:00</div>
+      </div>
+    </div>
+
+    <!-- Progress Bar -->
+    <div class="progress-bar-container">
+      <div class="progress-bar-fill" id="progressBar"></div>
+    </div>
+
+    <!-- Visual Chunk Matrix -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem;">
+      <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted);">Visual Chunk Grid (Atomic Server Ingestion)</span>
+      <div style="display: flex; gap: 0.8rem; font-size: 0.72rem; color: var(--text-muted);">
+        <span style="display: flex; align-items: center; gap: 4px;"><span style="width: 8px; height: 8px; background: rgba(255,255,255,0.1); border-radius: 2px;"></span> Pending</span>
+        <span style="display: flex; align-items: center; gap: 4px;"><span style="width: 8px; height: 8px; background: var(--accent); border-radius: 2px;"></span> Uploading</span>
+        <span style="display: flex; align-items: center; gap: 4px;"><span style="width: 8px; height: 8px; background: var(--emerald); border-radius: 2px;"></span> Verified</span>
+        <span style="display: flex; align-items: center; gap: 4px;"><span style="width: 8px; height: 8px; background: var(--amber); border-radius: 2px;"></span> Retrying</span>
+      </div>
+    </div>
+    <div class="chunk-matrix" id="chunkMatrix">
+      <!-- Generated Chunk Cells -->
+    </div>
+
+    <!-- Event Terminal -->
+    <div style="margin-top: 1.2rem;">
+      <div style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); margin-bottom: 0.4rem;">Protocol Event Log (Real-Time Client/Server Activity)</div>
+      <div class="terminal" id="terminalLog">
+        <div class="term-line"><span class="term-time">[00:00:00]</span> <span class="term-tag client">[SYSTEM]</span> Ready. Select a video file to begin.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 4: Forensic Analysis & Video Integrity Report -->
+  <div class="report-section" id="reportSection">
+    <div class="card">
+      <div class="card-title">
+        <span class="card-title-icon">
+          <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          Step 4: 30 FPS Frame-Level Integrity & Forensic Analysis
+        </span>
+      </div>
+
+      <!-- Verdict Banner -->
+      <div class="verdict-banner clean" id="verdictBanner">
+        <div class="verdict-title">
+          <span id="verdictIcon">✅</span>
+          <span id="verdictText">INTEGRITY VERIFIED: NO ANOMALIES</span>
+        </div>
+        <div class="badge" id="reportIdBadge" style="background: rgba(0,0,0,0.2); font-family: var(--font-mono);">
+          ID: <span id="reportUploadId">-</span>
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="tabs">
+        <button class="tab-btn active" id="tabDashboard">Interactive Forensics</button>
+        <button class="tab-btn" id="tabMarkdown">Markdown Report</button>
+        <button class="tab-btn" id="tabJson">Structured JSON</button>
+      </div>
+
+      <!-- Tab Content 1: Interactive Dashboard -->
+      <div id="tabContentDashboard" class="report-grid">
+        <!-- Assembled Video Player -->
+        <div class="report-video-container">
+          <p style="font-size: 0.82rem; font-weight: 700; color: var(--text-muted); margin-bottom: 0.5rem;">Assembled & Verified Media Stream</p>
+          <video id="assembledVideoPlayer" controls></video>
+          
+          <div class="attribution-card" id="attributionCard">
+            <strong>Root Cause Attribution:</strong>
+            <p id="attributionText">Evaluating...</p>
+          </div>
+        </div>
+
+        <!-- Telemetry & Anomaly Breakdown -->
+        <div>
+          <p style="font-size: 0.82rem; font-weight: 700; color: var(--text-muted); margin-bottom: 0.5rem;">Stream Forensics Summary</p>
+          <table class="stats-table">
+            <tbody>
+              <tr><td>Transfer SHA-256 Match</td><td id="statShaMatch" style="color: var(--emerald);">True</td></tr>
+              <tr><td>Assembled Byte Size</td><td id="statSize">-</td></tr>
+              <tr><td>Container & Codec</td><td id="statCodec">-</td></tr>
+              <tr><td>Declared vs Measured FPS</td><td id="statFps">-</td></tr>
+              <tr><td>Total Frames Decoded</td><td id="statFrames">-</td></tr>
+              <tr><td>Continuous Frame Ratio</td><td id="statRatio" style="color: var(--emerald);">-</td></tr>
+              <tr><td>Frozen / Duplicate Frames</td><td id="statFrozen">-</td></tr>
+            </tbody>
+          </table>
+
+          <p style="font-size: 0.82rem; font-weight: 700; color: var(--text-muted); margin-top: 1rem;">Detected Frame Anomalies (Click to seek video)</p>
+          <div class="anomaly-list" id="anomalyList">
+            <div style="font-size: 0.78rem; color: var(--text-muted); padding: 0.5rem;">No frame anomalies detected.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab Content 2: Markdown -->
+      <div id="tabContentMarkdown" style="display: none;">
+        <pre class="code-view" id="markdownReportText"></pre>
+      </div>
+
+      <!-- Tab Content 3: JSON -->
+      <div id="tabContentJson" style="display: none;">
+        <pre class="code-view" id="jsonReportText"></pre>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Application State ──────────────────────────────────────────────────────────
+const state = {
+  file: null,
+  fileBuffer: null,
+  fileSha256: '',
+  chunkSize: 262144, // 256 KiB
+  chunkCount: 0,
+  chunks: [],
+  uploadId: null,
+  fsmState: 'IDLE',
+  isPaused: false,
+  isUploading: false,
+  corruptNextChunk: false,
+  
+  // Network simulation parameters
+  networkCondition: 'normal', // 'normal', 'low', 'off', 'custom'
+  speedCapKB: 2000,           // 2000 = uncapped
+  latencyMs: 0,
+  dropRatePercent: 0,
+  
+  // Progress & Telemetry
+  uploadedChunks: new Set(),
+  retriesCount: 0,
+  bytesTransferred: 0,
+  startTime: null,
+  timerInterval: null
+};
+
+// ── DOM Elements ──────────────────────────────────────────────────────────────
+const dropzone = document.getElementById('dropzone');
+const fileInput = document.getElementById('fileInput');
+const sampleSelect = document.getElementById('sampleSelect');
+const btnLoadSample = document.getElementById('btnLoadSample');
+const filePreviewCard = document.getElementById('filePreviewCard');
+const localVideoPreview = document.getElementById('localVideoPreview');
+const previewFilename = document.getElementById('previewFilename');
+const previewFilesize = document.getElementById('previewFilesize');
+const previewMeta = document.getElementById('previewMeta');
+const chunkSizeSelect = document.getElementById('chunkSizeSelect');
+const manifestToggle = document.getElementById('manifestToggle');
+const btnStartUpload = document.getElementById('btnStartUpload');
+
+// Network controls
+const presetNormal = document.getElementById('presetNormal');
+const presetLow = document.getElementById('presetLow');
+const presetOff = document.getElementById('presetOff');
+const netConditionBadge = document.getElementById('netConditionBadge');
+const btnCutNetwork = document.getElementById('btnCutNetwork');
+const btnRestoreNetwork = document.getElementById('btnRestoreNetwork');
+const btnCorruptChunk = document.getElementById('btnCorruptChunk');
+const btnPauseResume = document.getElementById('btnPauseResume');
+const speedSlider = document.getElementById('speedSlider');
+const speedVal = document.getElementById('speedVal');
+const latencySlider = document.getElementById('latencySlider');
+const latencyVal = document.getElementById('latencyVal');
+const dropSlider = document.getElementById('dropSlider');
+const dropVal = document.getElementById('dropVal');
+
+// Telemetry & chunk matrix
+const fsmBadge = document.getElementById('fsmBadge');
+const uploadIdDisplay = document.getElementById('uploadIdDisplay');
+const teleSpeed = document.getElementById('teleSpeed');
+const teleChunks = document.getElementById('teleChunks');
+const teleRetries = document.getElementById('teleRetries');
+const teleElapsed = document.getElementById('teleElapsed');
+const progressBar = document.getElementById('progressBar');
+const chunkMatrix = document.getElementById('chunkMatrix');
+const terminalLog = document.getElementById('terminalLog');
+
+// Report
+const reportSection = document.getElementById('reportSection');
+const verdictBanner = document.getElementById('verdictBanner');
+const verdictIcon = document.getElementById('verdictIcon');
+const verdictText = document.getElementById('verdictText');
+const reportUploadId = document.getElementById('reportUploadId');
+const assembledVideoPlayer = document.getElementById('assembledVideoPlayer');
+const attributionText = document.getElementById('attributionText');
+const statShaMatch = document.getElementById('statShaMatch');
+const statSize = document.getElementById('statSize');
+const statCodec = document.getElementById('statCodec');
+const statFps = document.getElementById('statFps');
+const statFrames = document.getElementById('statFrames');
+const statRatio = document.getElementById('statRatio');
+const statFrozen = document.getElementById('statFrozen');
+const anomalyList = document.getElementById('anomalyList');
+const tabDashboard = document.getElementById('tabDashboard');
+const tabMarkdown = document.getElementById('tabMarkdown');
+const tabJson = document.getElementById('tabJson');
+const tabContentDashboard = document.getElementById('tabContentDashboard');
+const tabContentMarkdown = document.getElementById('tabContentMarkdown');
+const tabContentJson = document.getElementById('tabContentJson');
+const markdownReportText = document.getElementById('markdownReportText');
+const jsonReportText = document.getElementById('jsonReportText');
+
+// ── Logging helper ────────────────────────────────────────────────────────────
+function logEvent(tag, message, type = 'client') {
+  const now = new Date();
+  const timeStr = now.toTimeString().split(' ')[0] + '.' + String(now.getMilliseconds()).padStart(3, '0');
+  const line = document.createElement('div');
+  line.className = 'term-line';
+  line.innerHTML = `<span class="term-time">[${timeStr}]</span> <span class="term-tag ${type}">[${tag}]</span> ${message}`;
+  terminalLog.appendChild(line);
+  terminalLog.scrollTop = terminalLog.scrollHeight;
+}
+
+// ── Web Crypto SHA-256 ────────────────────────────────────────────────────────
+async function computeSha256(arrayBuffer) {
+  const digest = await crypto.subtle.digest('SHA-256', arrayBuffer);
+  return Array.from(new Uint8Array(digest))
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+// ── Load Sample Clips from Server ─────────────────────────────────────────────
+async function loadSampleVideosList() {
+  try {
+    const res = await fetch('/api/sample-videos');
+    if (!res.ok) return;
+    const samples = await res.json();
+    sampleSelect.innerHTML = '<option value="">-- Choose Pre-Generated Test Clip --</option>';
+    samples.forEach(s => {
+      const opt = document.createElement('option');
+      opt.value = s.filename;
+      opt.textContent = `${s.filename} (${(s.size / 1024 / 1024).toFixed(2)} MB)`;
+      sampleSelect.appendChild(opt);
+    });
+  } catch (err) {
+    console.warn('Could not list sample videos:', err);
+  }
+}
+loadSampleVideosList();
+
+// ── File Selection Handling ───────────────────────────────────────────────────
+dropzone.addEventListener('click', () => fileInput.click());
+
+dropzone.addEventListener('dragover', (e) => {
+  e.preventDefault();
+  dropzone.classList.add('dragover');
+});
+
+dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
+
+dropzone.addEventListener('drop', (e) => {
+  e.preventDefault();
+  dropzone.classList.remove('dragover');
+  if (e.dataTransfer.files.length) {
+    handleSelectedFile(e.dataTransfer.files[0]);
+  }
+});
+
+fileInput.addEventListener('change', () => {
+  if (fileInput.files.length) {
+    handleSelectedFile(fileInput.files[0]);
+  }
+});
+
+btnLoadSample.addEventListener('click', async () => {
+  const filename = sampleSelect.value;
+  if (!filename) return;
+  logEvent('SAMPLE', `Fetching sample video: ${filename}...`, 'sim');
+  try {
+    const res = await fetch(`/api/sample-videos/${filename}`);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const blob = await res.blob();
+    const file = new File([blob], filename, { type: blob.type || 'video/mp4' });
+    handleSelectedFile(file);
+    logEvent('SAMPLE', `Loaded sample video '${filename}' (${(file.size / 1024 / 1024).toFixed(2)} MB)`, 'server');
+  } catch (err) {
+    logEvent('ERROR', `Failed loading sample: ${err.message}`, 'err');
+  }
+});
+
+chunkSizeSelect.addEventListener('change', () => {
+  state.chunkSize = parseInt(chunkSizeSelect.value, 10);
+  if (state.file) recalculateChunks();
+});
+
+async function handleSelectedFile(file) {
+  state.file = file;
+  previewFilename.textContent = file.name;
+  previewFilesize.textContent = `${(file.size / 1024 / 1024).toFixed(2)} MB (${file.size.toLocaleString()} bytes)`;
+  filePreviewCard.style.display = 'flex';
+  localVideoPreview.src = URL.createObjectURL(file);
+
+  logEvent('FILE', `Selected: ${file.name} (${file.size} bytes). Computing whole-file SHA-256...`, 'client');
+  previewMeta.textContent = 'Computing SHA-256...';
+
+  state.fileBuffer = await file.arrayBuffer();
+  state.fileSha256 = await computeSha256(state.fileBuffer);
+
+  logEvent('SHA-256', `Whole-file hash: ${state.fileSha256}`, 'client');
+  previewMeta.textContent = `SHA-256: ${state.fileSha256.substring(0, 16)}...`;
+
+  recalculateChunks();
+  btnStartUpload.disabled = false;
+}
+
+function recalculateChunks() {
+  if (!state.file) return;
+  state.chunkSize = parseInt(chunkSizeSelect.value, 10);
+  state.chunkCount = Math.ceil(state.file.size / state.chunkSize);
+  
+  // Render chunk grid
+  chunkMatrix.innerHTML = '';
+  for (let i = 0; i < state.chunkCount; i++) {
+    const cell = document.createElement('div');
+    cell.className = 'chunk-cell';
+    cell.id = `chunk-cell-${i}`;
+    cell.textContent = i;
+    cell.title = `Chunk ${i} (Pending)`;
+    chunkMatrix.appendChild(cell);
+  }
+
+  teleChunks.textContent = `0 / ${state.chunkCount}`;
+  logEvent('CHUNK', `Configured: ${state.chunkCount} chunks of ${(state.chunkSize / 1024)} KiB`, 'client');
+}
+
+// ── Network Simulation Logic ──────────────────────────────────────────────────
+function setNetworkCondition(condition) {
+  state.networkCondition = condition;
+  presetNormal.classList.remove('active-preset', 'active-low', 'active-off');
+  presetLow.classList.remove('active-preset', 'active-low', 'active-off');
+  presetOff.classList.remove('active-preset', 'active-low', 'active-off');
+
+  if (condition === 'normal') {
+    presetNormal.classList.add('active-preset');
+    speedSlider.value = 2000;
+    latencySlider.value = 0;
+    dropSlider.value = 0;
+    netConditionBadge.textContent = 'Normal 100%';
+    netConditionBadge.style.borderColor = 'rgba(16, 185, 129, 0.4)';
+    netConditionBadge.style.color = '#6ee7b7';
+    netConditionBadge.style.background = 'rgba(16, 185, 129, 0.15)';
+    logEvent('NET_SIM', 'Condition: Normal (100% full throughput, 0ms delay, 0% drop)', 'sim');
+  } else if (condition === 'low') {
+    presetLow.classList.add('active-low');
+    speedSlider.value = 50; // 50 KB/s
+    latencySlider.value = 350; // 350ms
+    dropSlider.value = 15; // 15% drop rate
+    netConditionBadge.textContent = 'Low Network 20%';
+    netConditionBadge.style.borderColor = 'rgba(245, 158, 11, 0.4)';
+    netConditionBadge.style.color = '#fde68a';
+    netConditionBadge.style.background = 'rgba(245, 158, 11, 0.15)';
+    logEvent('NET_SIM', 'Condition: Low Network 20% (Throttled to 50 KB/s, +350ms delay, 15% drop rate)', 'sim');
+  } else if (condition === 'off') {
+    presetOff.classList.add('active-off');
+    netConditionBadge.textContent = 'Off-Network 0%';
+    netConditionBadge.style.borderColor = 'rgba(244, 63, 94, 0.4)';
+    netConditionBadge.style.color = '#fca5a5';
+    netConditionBadge.style.background = 'rgba(244, 63, 94, 0.15)';
+    logEvent('NET_SIM', 'Condition: Off-Network (Simulated 0 KB/s link outage / connection severed)', 'err');
+  }
+  updateSliderLabels();
+}
+
+presetNormal.addEventListener('click', () => setNetworkCondition('normal'));
+presetLow.addEventListener('click', () => setNetworkCondition('low'));
+presetOff.addEventListener('click', () => setNetworkCondition('off'));
+
+btnCutNetwork.addEventListener('click', () => {
+  setNetworkCondition('off');
+});
+
+btnRestoreNetwork.addEventListener('click', () => {
+  setNetworkCondition('normal');
+  logEvent('NET_SIM', 'Network restored! Triggering immediate reconnection & resume query...', 'sim');
+});
+
+btnCorruptChunk.addEventListener('click', () => {
+  state.corruptNextChunk = true;
+  logEvent('FAULT_INJECT', 'Next chunk will be corrupted with bad SHA-256 to test server rejection!', 'err');
+});
+
+btnPauseResume.addEventListener('click', () => {
+  state.isPaused = !state.isPaused;
+  btnPauseResume.textContent = state.isPaused ? '▶️ Resume' : '⏸️ Pause';
+  logEvent('CLIENT', state.isPaused ? 'Upload paused by user' : 'Upload resumed by user', 'client');
+});
+
+function updateSliderLabels() {
+  state.speedCapKB = parseInt(speedSlider.value, 10);
+  speedVal.textContent = state.speedCapKB >= 2000 ? 'Uncapped' : `${state.speedCapKB} KB/s`;
+
+  state.latencyMs = parseInt(latencySlider.value, 10);
+  latencyVal.textContent = `${state.latencyMs} ms`;
+
+  state.dropRatePercent = parseInt(dropSlider.value, 10);
+  dropVal.textContent = `${state.dropRatePercent} %`;
+}
+
+speedSlider.addEventListener('input', () => { updateSliderLabels(); state.networkCondition = 'custom'; });
+latencySlider.addEventListener('input', () => { updateSliderLabels(); state.networkCondition = 'custom'; });
+dropSlider.addEventListener('input', () => { updateSliderLabels(); state.networkCondition = 'custom'; });
+
+// ── Sleep helper ──────────────────────────────────────────────────────────────
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+// ── UPLOAD ENGINE & PROTOCOL ORCHESTRATION ─────────────────────────────────────
+btnStartUpload.addEventListener('click', async () => {
+  if (!state.fileBuffer || state.isUploading) return;
+  state.isUploading = true;
+  btnStartUpload.disabled = true;
+  state.uploadedChunks.clear();
+  state.retriesCount = 0;
+  state.bytesTransferred = 0;
+  teleRetries.textContent = '0';
+  progressBar.style.width = '0%';
+  reportSection.style.display = 'none';
+
+  // Start timer
+  state.startTime = Date.now();
+  if (state.timerInterval) clearInterval(state.timerInterval);
+  state.timerInterval = setInterval(updateTelemetry, 500);
+
+  try {
+    // 1. POST /uploads — Initialize Session
+    setFsmState('CREATED');
+    logEvent('PROTOCOL', `Initiating upload session for '${state.file.name}' (${state.file.size} bytes)`, 'client');
+
+    const manifestData = manifestToggle.checked ? {
+      filename: state.file.name,
+      total_size: state.file.size,
+      sha256: state.fileSha256,
+      expected_fps: 30.0,
+      expected_duration: 30.0,
+      expected_frames: 900
+    } : null;
+
+    const createRes = await fetch('/uploads', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        filename: state.file.name,
+        total_size: state.file.size,
+        chunk_size: state.chunkSize,
+        chunk_count: state.chunkCount,
+        sha256: state.fileSha256,
+        manifest: manifestData
+      })
+    });
+
+    if (!createRes.ok) throw new Error(`Create session failed: ${createRes.status} ${await createRes.text()}`);
+    const createData = await createRes.json();
+    state.uploadId = createData.upload_id;
+    uploadIdDisplay.textContent = `Upload ID: ${state.uploadId}`;
+    logEvent('PROTOCOL', `Session established: upload_id=${state.uploadId}`, 'server');
+
+    // 2. Upload Chunks Loop with Resumption & Simulated Impairments
+    setFsmState('UPLOADING');
+    await uploadAllChunks();
+
+    // 3. POST /complete — Finalize, Verify SHA-256, and Run Forensic Analyzer
+    setFsmState('ASSEMBLED');
+    logEvent('PROTOCOL', 'All chunks uploaded! Calling POST /complete for whole-file assembly & verification...', 'client');
+
+    const completeRes = await fetch(`/uploads/${state.uploadId}/complete`, { method: 'POST' });
+    const completeData = await completeRes.json();
+
+    if (!completeRes.ok || completeData.state === 'FAILED') {
+      setFsmState('FAILED');
+      logEvent('VERIFY', `Verification failed: ${completeData.fail_reason || 'Hash mismatch'}`, 'err');
+      alert(`Upload verification failed: ${completeData.fail_reason}`);
+      return;
+    }
+
+    setFsmState(completeData.state); // VERIFIED or ANALYZED
+    logEvent('VERIFY', `Whole-file SHA-256 verified! Server state: ${completeData.state}`, 'server');
+
+    // 4. Fetch and Render Forensic Integrity Report
+    await fetchAndRenderReport();
+
+  } catch (err) {
+    logEvent('FATAL', `Upload aborted: ${err.message}`, 'err');
+    setFsmState('FAILED');
+  } finally {
+    state.isUploading = false;
+    btnStartUpload.disabled = false;
+    if (state.timerInterval) clearInterval(state.timerInterval);
+  }
+});
+
+function setFsmState(newState) {
+  state.fsmState = newState;
+  fsmBadge.textContent = newState;
+  if (newState === 'VERIFIED' || newState === 'ANALYZED') {
+    fsmBadge.style.color = 'var(--emerald)';
+    fsmBadge.style.borderColor = 'var(--emerald)';
+  } else if (newState === 'FAILED' || newState === 'INCOMPLETE') {
+    fsmBadge.style.color = 'var(--rose)';
+    fsmBadge.style.borderColor = 'var(--rose)';
+  } else {
+    fsmBadge.style.color = 'var(--accent)';
+    fsmBadge.style.borderColor = 'var(--accent)';
+  }
+}
+
+// ── Chunk Uploading Loop with Exponential Backoff + Jitter ───────────────────
+async function uploadAllChunks() {
+  for (let i = 0; i < state.chunkCount; i++) {
+    // Check if chunk is already stored (from a resume)
+    if (state.uploadedChunks.has(i)) {
+      updateChunkCell(i, 'verified', `Chunk ${i} (Already uploaded)`);
+      continue;
+    }
+
+    // Pause handling
+    while (state.isPaused) {
+      await sleep(200);
+    }
+
+    let success = false;
+    let attempt = 0;
+    const maxRetries = 25;
+
+    while (!success && attempt < maxRetries) {
+      attempt++;
+      updateChunkCell(i, attempt === 1 ? 'in-flight' : 'retrying', `Chunk ${i} (Attempt ${attempt})`);
+
+      try {
+        // --- CLIENT-SIDE NETWORK SIMULATION ENGINE ---
+        // 1. Off-network simulation check
+        if (state.networkCondition === 'off') {
+          throw new Error('Simulated Network Outage (0 KB/s - link disconnected)');
+        }
+
+        // 2. Simulated packet drop rate
+        if (state.dropRatePercent > 0 && Math.random() * 100 < state.dropRatePercent) {
+          throw new Error(`Simulated Packet Drop (${state.dropRatePercent}% drop rate trigger)`);
+        }
+
+        // 3. Simulated Latency delay
+        if (state.latencyMs > 0) {
+          const jitter = (Math.random() - 0.5) * 50;
+          await sleep(Math.max(10, state.latencyMs + jitter));
+        }
+
+        // Slice chunk bytes
+        const start = i * state.chunkSize;
+        const end = Math.min(start + state.chunkSize, state.file.size);
+        const chunkSlice = state.fileBuffer.slice(start, end);
+        let chunkHash = await computeSha256(chunkSlice);
+
+        // Check if user requested corruption injection
+        if (state.corruptNextChunk) {
+          state.corruptNextChunk = false;
+          chunkHash = 'bad0000000000000000000000000000000000000000000000000000000badbad';
+          logEvent('CORRUPT', `Injecting deliberately forged hash for chunk ${i} to test server detection!`, 'err');
+        }
+
+        // 4. Bandwidth throttling simulation
+        if (state.speedCapKB < 2000 && state.speedCapKB > 0) {
+          const throttleDelay = (chunkSlice.byteLength / (state.speedCapKB * 1024)) * 1000;
+          await sleep(throttleDelay);
+        }
+
+        // Send HTTP PUT request
+        const res = await fetch(`/uploads/${state.uploadId}/chunks/${i}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/octet-stream',
+            'X-Chunk-SHA256': chunkHash
+          },
+          body: chunkSlice
+        });
+
+        if (!res.ok) {
+          const errText = await res.text();
+          throw new Error(`Server returned HTTP ${res.status}: ${errText}`);
+        }
+
+        // Chunk uploaded successfully
+        state.uploadedChunks.add(i);
+        state.bytesTransferred += chunkSlice.byteLength;
+        updateChunkCell(i, 'verified', `Chunk ${i} (Verified, sha256=${chunkHash.substring(0, 8)})`);
+        logEvent('CHUNK', `Chunk ${i + 1}/${state.chunkCount} verified & stored (${chunkSlice.byteLength} bytes)`, 'client');
+        success = true;
+
+      } catch (err) {
+        state.retriesCount++;
+        teleRetries.textContent = state.retriesCount;
+        logEvent('RETRY', `Chunk ${i} failed: ${err.message}`, 'err');
+        updateChunkCell(i, 'failed', `Chunk ${i} failed: ${err.message}`);
+
+        // Every 3 consecutive failures, query server state to resume accurately
+        if (attempt % 3 === 0) {
+          await queryServerResumeState();
+          if (state.uploadedChunks.has(i)) {
+            success = true;
+            break;
+          }
+        }
+
+        // Exponential backoff with full jitter: Uniform(0, min(cap, base * 2^attempt))
+        const backoffCap = 8000;
+        const base = 400;
+        const maxWait = Math.min(backoffCap, base * Math.pow(2, attempt));
+        const backoffWait = Math.floor(Math.random() * maxWait);
+        logEvent('BACKOFF', `Backing off for ${(backoffWait / 1000).toFixed(2)}s before retry (Attempt ${attempt}/${maxRetries})...`, 'sim');
+        await sleep(backoffWait);
+      }
+    }
+
+    if (!success) {
+      throw new Error(`Exceeded max retries on chunk ${i}`);
+    }
+
+    updateTelemetry();
+  }
+}
+
+// ── Query Server Resume State (GET /uploads/{id}) ─────────────────────────────
+async function queryServerResumeState() {
+  try {
+    logEvent('RESUME', `Querying server GET /uploads/${state.uploadId} to synchronize received chunks...`, 'sim');
+    const res = await fetch(`/uploads/${state.uploadId}`);
+    if (res.ok) {
+      const data = await res.json();
+      data.received_chunks.forEach(idx => {
+        state.uploadedChunks.add(idx);
+        updateChunkCell(idx, 'verified', `Chunk ${idx} (Confirmed on server)`);
+      });
+      logEvent('RESUME', `Server holds ${data.received_chunks.length}/${data.chunk_count} chunks. Resuming missing chunks only!`, 'server');
+    }
+  } catch (e) {
+    console.warn('Resume query failed:', e);
+  }
+}
+
+function updateChunkCell(index, status, title) {
+  const cell = document.getElementById(`chunk-cell-${index}`);
+  if (!cell) return;
+  cell.className = `chunk-cell ${status}`;
+  if (title) cell.title = title;
+}
+
+function updateTelemetry() {
+  if (!state.isUploading) return;
+  const count = state.uploadedChunks.size;
+  teleChunks.textContent = `${count} / ${state.chunkCount}`;
+  const pct = Math.floor((count / (state.chunkCount || 1)) * 100);
+  progressBar.style.width = `${pct}%`;
+
+  const elapsedSec = Math.max(0.1, (Date.now() - state.startTime) / 1000);
+  const m = String(Math.floor(elapsedSec / 60)).padStart(2, '0');
+  const s = String(Math.floor(elapsedSec % 60)).padStart(2, '0');
+  teleElapsed.textContent = `${m}:${s}`;
+
+  const currentSpeed = Math.round((state.bytesTransferred / 1024) / elapsedSec);
+  teleSpeed.textContent = `${currentSpeed} KB/s`;
+}
+
+// ── Step 4: Render Forensic Integrity Report ──────────────────────────────────
+async function fetchAndRenderReport() {
+  logEvent('REPORT', 'Fetching frame-level forensic report from server...', 'client');
+  try {
+    const jsonRes = await fetch(`/uploads/${state.uploadId}/report`);
+    const mdRes = await fetch(`/uploads/${state.uploadId}/report?format=md`);
+
+    const reportJson = await jsonRes.json();
+    const reportMd = await mdRes.text();
+
+    reportSection.style.display = 'block';
+    reportUploadId.textContent = state.uploadId;
+    markdownReportText.textContent = reportMd;
+    jsonReportText.textContent = JSON.stringify(reportJson, null, 2);
+
+    // Setup assembled video player
+    assembledVideoPlayer.src = `/uploads/${state.uploadId}/video`;
+
+    // Verdict Styling
+    const verdict = reportJson.overall_verdict || 'UNKNOWN';
+    verdictBanner.className = 'verdict-banner ' + (verdict === 'CLEAN' ? 'clean' : 'anomalies');
+    verdictIcon.textContent = verdict === 'CLEAN' ? '✅' : '⚠️';
+    verdictText.textContent = `VERDICT: ${verdict}`;
+
+    // Fill table
+    const ti = reportJson.transfer_integrity || {};
+    statShaMatch.textContent = String(ti.hash_match);
+    statShaMatch.style.color = ti.hash_match ? 'var(--emerald)' : 'var(--rose)';
+    statSize.textContent = `${(ti.actual_size || 0).toLocaleString()} bytes`;
+
+    const vsm = reportJson.video_stream_metadata || {};
+    statCodec.textContent = `${vsm.container || 'mp4'} / ${vsm.codec || 'h264'}`;
+    statFps.textContent = `${vsm.declared_fps || 30.0} declared | ${vsm.measured_fps ? vsm.measured_fps.toFixed(2) : '30.0'} measured`;
+    statFrames.textContent = `${vsm.total_frames_decoded || 0} frames`;
+
+    const fca = reportJson.frame_continuity_analysis || {};
+    statRatio.textContent = `${(fca.continuous_frame_ratio_pct || 100).toFixed(2)}%`;
+    statFrozen.textContent = `${fca.duplicate_frame_count || 0} frames`;
+
+    // Root Cause Attribution
+    const rcc = reportJson.root_cause_classification || {};
+    attributionText.innerHTML = `
+      <strong>Category:</strong> <code>${rcc.primary_classification || 'N/A'}</code> (Confidence: ${rcc.confidence || 'HIGH'})<br>
+      <strong>Forensic Rationale:</strong> ${rcc.reasoning || 'No anomalies detected.'}
+    `;
+
+    // Anomalies List
+    const anomalies = reportJson.anomaly_breakdown || [];
+    anomalyList.innerHTML = '';
+    if (anomalies.length === 0) {
+      anomalyList.innerHTML = '<div style="font-size: 0.78rem; color: var(--emerald); padding: 0.5rem;">✅ Zero timestamp gaps or frozen runs detected. Stream is 100% continuous.</div>';
+    } else {
+      anomalies.forEach(a => {
+        const item = document.createElement('div');
+        item.className = 'anomaly-item';
+        item.innerHTML = `
+          <span><strong>${a.type}</strong> (${a.duration_sec ? a.duration_sec.toFixed(3) + 's' : 'drop'})</span>
+          <span style="font-family: var(--font-mono); color: var(--accent);">${a.timestamp_str || '00:00:00'}</span>
+        `;
+        item.addEventListener('click', () => {
+          if (a.timestamp_sec) {
+            assembledVideoPlayer.currentTime = a.timestamp_sec;
+            assembledVideoPlayer.play();
+          }
+        });
+        anomalyList.appendChild(item);
+      });
+    }
+
+    logEvent('REPORT', `Forensic analysis displayed: Verdict is ${verdict}`, 'server');
+
+    // Scroll smoothly to report section
+    reportSection.scrollIntoView({ behavior: 'smooth' });
+
+  } catch (err) {
+    logEvent('ERROR', `Failed rendering report: ${err.message}`, 'err');
+  }
+}
+
+// ── Tab Switching ─────────────────────────────────────────────────────────────
+tabDashboard.addEventListener('click', () => switchTab('dashboard'));
+tabMarkdown.addEventListener('click', () => switchTab('markdown'));
+tabJson.addEventListener('click', () => switchTab('json'));
+
+function switchTab(tab) {
+  tabDashboard.classList.toggle('active', tab === 'dashboard');
+  tabMarkdown.classList.toggle('active', tab === 'markdown');
+  tabJson.classList.toggle('active', tab === 'json');
+
+  tabContentDashboard.style.display = tab === 'dashboard' ? 'grid' : 'none';
+  tabContentMarkdown.style.display = tab === 'markdown' ? 'block' : 'none';
+  tabContentJson.style.display = tab === 'json' ? 'block' : 'none';
+}
+</script>
+</body>
+</html>

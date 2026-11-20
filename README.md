@@ -259,7 +259,24 @@ python -m server.main
 # OpenAPI Docs available at http://127.0.0.1:8000/docs
 ```
 
-### 4. Perform Resilient Video Upload
+### 4. Open the Interactive Web Dashboard
+Open your browser and navigate to:
+```
+http://127.0.0.1:8000/
+```
+The built-in web dashboard provides:
+- **Interactive File Ingestion & Chunk Sizing**: Drag & drop any local video file or load synthetic test clips with one click. Select chunk window sizes (64 KiB, 128 KiB, 256 KiB, 512 KiB, 1 MiB, 2 MiB) with live slice calculations.
+- **Manual Network Impairment Controls**:
+  - **Presets**: *Normal (100% Speed)*, *Low Network (20% Throttled + 350ms Latency + 15% Drops)*, and *Off-Network (0% Disconnect Blackout)*.
+  - **Live Action Buttons (usable mid-upload)**:
+    - 🔌 **"Cut Cable"**: Instantly severs network mid-upload to trigger connection drops and exponential backoff.
+    - ⚡ **"Restore Link"**: Restores network; client synchronizes state via `GET /uploads/{id}` and resumes missing chunks without re-transmitting received bytes.
+    - ⚠️ **"Corrupt Next"**: Injects bad chunk data/hash to test server cryptographic rejection (HTTP 400).
+    - ⏸️ **"Pause / Resume"**: Manually suspends and resumes transfer.
+- **Real-Time Visual Chunk Matrix**: Interactive tile grid showing in-flight, verified, retrying, and failed chunks.
+- **Automated Forensic Analysis Dashboard**: Streams the assembled video side-by-side with clickable anomaly timelines (PTS gaps, freeze runs), frame continuity metrics, and root-cause attribution.
+
+### 5. (Alternative) CLI Resilient Video Upload
 In another terminal, upload a video file with automatic capture manifest generation:
 
 ```bash
